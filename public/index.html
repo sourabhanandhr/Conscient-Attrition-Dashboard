@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conscient Sports — People Analytics Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    :root {
+      --navy: #002f6c;
+      --navy-light: #003d8f;
+      --sky: #0090d4;
+      --sky-light: #4fc3f7;
+      --orange: #e76f51;
+      --orange-light: #f4a261;
+      --red: #c0392b;
+      --green: #1a7a4a;
+      --slate: #b0c4de;
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --surface2: #eef1f8;
+      --text: #0d1b2a;
+      --text2: #4a5568;
+      --text3: #8a95a3;
+      --border: rgba(0,47,108,0.1);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 1px 4px rgba(0,47,108,0.08);
+      --shadow-md: 0 4px 20px rgba(0,47,108,0.1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ─── TOP NAV ─── */
+    .topnav {
+      background: var(--navy);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topnav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--sky);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .brand-icon svg { width: 20px; height: 20px; }
+    .brand-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.01em;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 0.03em;
+    }
+    .nav-badge {
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.8);
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.03em;
+    }
+
+    /* ─── MAIN LAYOUT ─── */
+    .page { max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; }
+
+    /* ─── PAGE HEADER ─── */
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .page-header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--navy);
+      line-height: 1.2;
+    }
+    .page-header p {
+      font-size: 13px;
+      color: var(--text2);
+      margin-top: 3px;
+    }
+    .header-right {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .tag-navy { background: #dde8f8; color: var(--navy); }
+    .tag-orange { background: #fde8e2; color: #a63a1e; }
+    .tag-green { background: #dcf0e6; color: #145a38; }
+
+    /* ─── KPI GRID ─── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 18px 16px 14px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .kpi-card.accent-navy::before { background: var(--navy); }
+    .kpi-card.accent-red::before { background: var(--red); }
+    .kpi-card.accent-green::before { background: var(--green); }
+    .kpi-card.accent-sky::before { background: var(--sky); }
+    .kpi-card.accent-orange::before { background: var(--orange); }
+    .kpi-label {
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text3);
+      margin-bottom: 8px;
+    }
+    .kpi-val {
+      font-size: 28px;
+      font-weight: 600;
+      line-height: 1;
+      color: var(--navy);
+      font-family: 'DM Mono', monospace;
+    }
+    .kpi-val.red { color: var(--red); }
+    .kpi-val.green { color: var(--green); }
+    .kpi-val.sky { color: var(--sky); }
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 5px;
+    }
+    .kpi-trend {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 5px;
+    }
+    .kpi-trend.up { background: #fde8e2; color: var(--red); }
+    .kpi-trend.down { background: #dcf0e6; color: var(--green); }
+
+    /* ─── SECTION TITLE ─── */
+    .section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text3);
+      margin-bottom: 12px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ─── CHART GRID ─── */
+    .chart-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .chart-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .chart-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .chart-card.full { grid-column: 1 / -1; }
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .card-sub {
+      font-size: 11px;
+      color: var(--text3);
+      margin-bottom: 14px;
+    }
+    .chart-wrap { position: relative; width: 100%; }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 12px;
+      font-size: 11px;
+      color: var(--text2);
+    }
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .leg-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ─── GENDER VISUAL ─── */
+    .gender-row {
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr;
+      gap: 0;
+      margin-bottom: 14px;
+    }
+    .gender-divider { background: var(--border); }
+    .gender-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 8px;
+      gap: 8px;
+    }
+    .gender-symbol {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .gender-symbol.male { background: #dde8f8; }
+    .gender-symbol.female { background: #fde8e2; }
+    .gender-bar-track {
+      width: 36px;
+      height: 80px;
+      background: var(--surface2);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      overflow: hidden;
+    }
+    .gender-bar-fill { width: 100%; border-radius: 4px 4px 0 0; transition: height 1s ease; }
+    .gender-stat-val { font-size: 20px; font-weight: 600; font-family: 'DM Mono', monospace; }
+    .gender-stat-lbl { font-size: 11px; font-weight: 500; }
+    .gender-stat-pct { font-size: 10px; color: var(--text3); }
+    .gender-info-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .gender-info-box {
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+    }
+    .gi-label { font-size: 10px; color: var(--text3); margin-bottom: 2px; }
+    .gi-val { font-size: 14px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--navy); }
+    .gi-detail { font-size: 10px; color: var(--text3); margin-top: 1px; }
+
+    /* ─── PILL BARS ─── */
+    .pill-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+    .pill-label {
+      font-size: 12px;
+      color: var(--text2);
+      width: 100px;
+      flex-shrink: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pill-track {
+      flex: 1;
+      background: var(--surface2);
+      border-radius: 4px;
+      height: 20px;
+      overflow: hidden;
+    }
+    .pill-fill {
+      height: 100%;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      padding-right: 8px;
+      justify-content: flex-end;
+      font-size: 10px;
+      font-weight: 600;
+      color: white;
+      min-width: 24px;
+      font-family: 'DM Mono', monospace;
+    }
+    .pill-count {
+      font-size: 11px;
+      color: var(--text3);
+      width: 36px;
+      text-align: right;
+      flex-shrink: 0;
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* ─── REASON TAGS ─── */
+    .reason-list { display: flex; flex-direction: column; gap: 0; }
+    .reason-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .reason-row:last-child { border-bottom: none; }
+    .reason-name { color: var(--text); font-weight: 400; }
+    .reason-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-family: 'DM Mono', monospace;
+    }
+    .reason-pill.r1 { background: #fde8e2; color: #a63a1e; }
+    .reason-pill.r2 { background: #fef3e2; color: #7a4f0d; }
+    .reason-pill.r3 { background: #dde8f8; color: var(--navy); }
+    .reason-pill.r4 { background: #dcf0e6; color: #145a38; }
+    .reason-pill.r5 { background: #eef1f8; color: var(--text2); }
+
+    /* ─── LOCATION GRID ─── */
+    .loc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .loc-card {
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      border-left: 3px solid transparent;
+    }
+    .loc-card.high { border-left-color: var(--red); }
+    .loc-card.mid { border-left-color: var(--orange); }
+    .loc-card.low { border-left-color: var(--green); }
+    .loc-city { font-size: 12px; color: var(--text2); margin-bottom: 2px; font-weight: 500; }
+    .loc-rate { font-size: 20px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--navy); }
+    .loc-detail { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+    /* ─── INSIGHT BANNER ─── */
+    .insight-banner {
+      background: var(--navy);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-top: 8px;
+    }
+    .insight-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 18px;
+    }
+    .insight-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+    .insight-body { font-size: 12px; color: rgba(255,255,255,0.65); line-height: 1.65; }
+    .insight-points {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .insight-tag {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.85);
+    }
+
+    /* ─── FOOTER ─── */
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 36px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 600px) {
+      .topnav { padding: 0 16px; }
+      .page { padding: 16px 14px 36px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .kpi-val { font-size: 22px; }
+      .chart-grid-2, .chart-grid-3 { grid-template-columns: 1fr; }
+      .gender-stat-val { font-size: 17px; }
+      .loc-grid { grid-template-columns: repeat(2, 1fr); }
+      .page-header h1 { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <div class="topnav-brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="10" cy="10" r="8.5" stroke="white" stroke-width="1.2"/>
+        <path d="M4 10 Q10 3 16 10 Q10 17 4 10Z" fill="white" opacity="0.8"/>
+        <circle cx="10" cy="10" r="2.5" fill="#0090d4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name">Conscient Sports</div>
+      <div class="brand-sub">People Analytics</div>
+    </div>
+  </div>
+  <div class="nav-badge">FY 2025 – 26</div>
+</nav>
+
+<!-- PAGE CONTENT -->
+<div class="page">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div>
+      <h1>Attrition Dashboard</h1>
+      <p>172 employees &nbsp;·&nbsp; Apr 2025 – Mar 2026 &nbsp;·&nbsp; All locations</p>
+    </div>
+    <div class="header-right">
+      <span class="tag tag-navy">130 Active</span>
+      <span class="tag tag-orange">42 Exited</span>
+      <span class="tag tag-green">24.4% Rate</span>
+    </div>
+  </div>
+
+  <!-- KPI STRIP -->
+  <div class="kpi-grid">
+    <div class="kpi-card accent-navy">
+      <div class="kpi-label">Total headcount</div>
+      <div class="kpi-val">172</div>
+      <div class="kpi-sub">End of FY 2025–26</div>
+    </div>
+    <div class="kpi-card accent-red">
+      <div class="kpi-label">Attrition rate</div>
+      <div class="kpi-val red">24.4%</div>
+      <div class="kpi-trend up">&#9650; 42 exits</div>
+    </div>
+    <div class="kpi-card accent-green">
+      <div class="kpi-label">Retained</div>
+      <div class="kpi-val green">130</div>
+      <div class="kpi-trend down">75.6% active</div>
+    </div>
+    <div class="kpi-card accent-sky">
+      <div class="kpi-label">Total exits</div>
+      <div class="kpi-val sky">42</div>
+      <div class="kpi-sub">Over 12 months</div>
+    </div>
+    <div class="kpi-card accent-orange">
+      <div class="kpi-label">Peak exit month</div>
+      <div class="kpi-val" style="font-size:18px; padding-top:4px;">Mar '26</div>
+      <div class="kpi-sub">7 exits in one month</div>
+    </div>
+    <div class="kpi-card accent-navy">
+      <div class="kpi-label">Top reason</div>
+      <div class="kpi-val" style="font-size:14px; padding-top:6px; line-height:1.3;">Performance<br>Issues</div>
+      <div class="kpi-sub">15 of 42 exits (36%)</div>
+    </div>
+  </div>
+
+  <!-- SECTION: Month-on-Month -->
+  <div class="section-label">Month-on-month attrition</div>
+  <div class="chart-card" style="margin-bottom:20px;">
+    <div class="card-title">Monthly exits + cumulative trend</div>
+    <div class="card-sub">April 2025 through March 2026 — monthly bar with cumulative line overlay</div>
+    <div class="legend">
+      <span><span class="leg-dot" style="background:#002f6c;"></span>Monthly exits (left axis)</span>
+      <span><span class="leg-dot" style="background:#4fc3f7;"></span>Cumulative exits (right axis)</span>
+    </div>
+    <div class="chart-wrap" style="height:240px;">
+      <canvas id="momChart"></canvas>
+    </div>
+  </div>
+
+  <!-- SECTION: Gender + Dept -->
+  <div class="section-label">Gender &amp; department breakdown</div>
+  <div class="chart-grid-2">
+
+    <!-- GENDER -->
+    <div class="chart-card">
+      <div class="card-title">Male vs female attrition</div>
+      <div class="card-sub">Headcount, exits, and individual attrition rates</div>
+      <div class="gender-row">
+        <div class="gender-col">
+          <div class="gender-symbol male">&#9794;</div>
+          <div class="gender-bar-track">
+            <div class="gender-bar-fill" style="height:93%; background:#002f6c;"></div>
+          </div>
+          <div style="text-align:center;">
+            <div class="gender-stat-val" style="color:#002f6c;">39</div>
+            <div class="gender-stat-lbl" style="color:#002f6c;">Male exits</div>
+            <div class="gender-stat-pct">93% of all exits</div>
+          </div>
+        </div>
+        <div class="gender-divider"></div>
+        <div class="gender-col">
+          <div class="gender-symbol female">&#9792;</div>
+          <div class="gender-bar-track">
+            <div class="gender-bar-fill" style="height:7%; background:#e76f51;"></div>
+          </div>
+          <div style="text-align:center;">
+            <div class="gender-stat-val" style="color:#e76f51;">3</div>
+            <div class="gender-stat-lbl" style="color:#e76f51;">Female exits</div>
+            <div class="gender-stat-pct">7% of all exits</div>
+          </div>
+        </div>
+      </div>
+      <div class="gender-info-row">
+        <div class="gender-info-box">
+          <div class="gi-label">Male attrition rate</div>
+          <div class="gi-val">24.1%</div>
+          <div class="gi-detail">39 of 162 males</div>
+        </div>
+        <div class="gender-info-box">
+          <div class="gi-label">Female attrition rate</div>
+          <div class="gi-val" style="color:#e76f51;">30.0%</div>
+          <div class="gi-detail">3 of 10 females</div>
+        </div>
+      </div>
+      <div style="height:150px; position:relative; margin-top:14px;">
+        <canvas id="genderChart"></canvas>
+      </div>
+    </div>
+
+    <!-- DEPARTMENT -->
+    <div class="chart-card">
+      <div class="card-title">Department-wise attrition</div>
+      <div class="card-sub">Active vs exited headcount per department</div>
+      <div class="legend">
+        <span><span class="leg-dot" style="background:#002f6c;"></span>Exited</span>
+        <span><span class="leg-dot" style="background:#b0c4de;"></span>Active</span>
+      </div>
+      <div class="chart-wrap" style="height:280px;">
+        <canvas id="deptChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION: Level + Reasons -->
+  <div class="section-label">Level &amp; reasons analysis</div>
+  <div class="chart-grid-2">
+
+    <!-- LEVEL -->
+    <div class="chart-card">
+      <div class="card-title">Level-wise attrition</div>
+      <div class="card-sub">Junior vs mid vs senior exits — count and rate</div>
+      <div style="height:180px; position:relative;">
+        <canvas id="levelChart"></canvas>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="pill-row">
+          <div class="pill-label">Junior-level</div>
+          <div class="pill-track"><div class="pill-fill" style="width:86%; background:#002f6c;">86%</div></div>
+          <div class="pill-count">36</div>
+        </div>
+        <div class="pill-row">
+          <div class="pill-label">Mid-level</div>
+          <div class="pill-track"><div class="pill-fill" style="width:10%; background:#0090d4;">10%</div></div>
+          <div class="pill-count">4</div>
+        </div>
+        <div class="pill-row">
+          <div class="pill-label">Senior-level</div>
+          <div class="pill-track"><div class="pill-fill" style="width:5%; background:#e76f51;">5%</div></div>
+          <div class="pill-count">2</div>
+        </div>
+        <div style="margin-top:12px; background:var(--surface2); border-radius:var(--radius-sm); padding:10px 12px;">
+          <div style="font-size:11px; color:var(--text3);">Junior attrition rate vs headcount</div>
+          <div style="font-size:13px; font-weight:600; color:var(--navy); font-family:'DM Mono',monospace; margin-top:2px;">27.5% <span style="font-size:11px; font-weight:400; color:var(--text3);">(36 of 131 juniors)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REASONS -->
+    <div class="chart-card">
+      <div class="card-title">Reasons for leaving</div>
+      <div class="card-sub">Distribution of stated exit reasons across 42 departures</div>
+      <div style="height:180px; position:relative;">
+        <canvas id="reasonChart"></canvas>
+      </div>
+      <div class="reason-list" style="margin-top:14px;">
+        <div class="reason-row">
+          <span class="reason-name">Performance issues</span>
+          <span class="reason-pill r1">15 &nbsp;·&nbsp; 36%</span>
+        </div>
+        <div class="reason-row">
+          <span class="reason-name">Work pressure</span>
+          <span class="reason-pill r2">10 &nbsp;·&nbsp; 24%</span>
+        </div>
+        <div class="reason-row">
+          <span class="reason-name">Better opportunity</span>
+          <span class="reason-pill r3">8 &nbsp;·&nbsp; 19%</span>
+        </div>
+        <div class="reason-row">
+          <span class="reason-name">Medical / family issues</span>
+          <span class="reason-pill r4">5 &nbsp;·&nbsp; 12%</span>
+        </div>
+        <div class="reason-row">
+          <span class="reason-name">BGV / misconduct / integrity</span>
+          <span class="reason-pill r5">4 &nbsp;·&nbsp; 10%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION: Locations -->
+  <div class="section-label">Location-wise attrition</div>
+  <div class="chart-card" style="margin-bottom:20px;">
+    <div class="card-title">City-wise attrition rate &amp; volume</div>
+    <div class="card-sub">Bangalore and Pune show the highest attrition rates; Ahmedabad is stable</div>
+    <div class="legend">
+      <span><span class="leg-dot" style="background:#c0392b;"></span>&gt;30% (high risk)</span>
+      <span><span class="leg-dot" style="background:#e76f51;"></span>20–30% (moderate)</span>
+      <span><span class="leg-dot" style="background:#1a7a4a;"></span>&lt;20% (healthy)</span>
+    </div>
+    <div class="chart-wrap" style="height:200px;">
+      <canvas id="locChart"></canvas>
+    </div>
+    <div class="loc-grid">
+      <div class="loc-card high">
+        <div class="loc-city">Bangalore</div>
+        <div class="loc-rate">36.7%</div>
+        <div class="loc-detail">11 exits / 30 total</div>
+      </div>
+      <div class="loc-card high">
+        <div class="loc-city">Pune</div>
+        <div class="loc-rate">31.8%</div>
+        <div class="loc-detail">7 exits / 22 total</div>
+      </div>
+      <div class="loc-card mid">
+        <div class="loc-city">Hyderabad</div>
+        <div class="loc-rate">28.6%</div>
+        <div class="loc-detail">4 exits / 14 total</div>
+      </div>
+      <div class="loc-card mid">
+        <div class="loc-city">Mumbai</div>
+        <div class="loc-rate">24.0%</div>
+        <div class="loc-detail">6 exits / 25 total</div>
+      </div>
+      <div class="loc-card mid">
+        <div class="loc-city">Delhi / NCR</div>
+        <div class="loc-rate">18.7%</div>
+        <div class="loc-detail">14 exits / 75 total</div>
+      </div>
+      <div class="loc-card low">
+        <div class="loc-city">Ahmedabad</div>
+        <div class="loc-rate" style="color:var(--green);">0%</div>
+        <div class="loc-detail">0 exits / 6 total</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSIGHT BANNER -->
+  <div class="insight-banner">
+    <div class="insight-icon">&#128161;</div>
+    <div>
+      <div class="insight-title">Key findings for leadership action</div>
+      <div class="insight-body">
+        86% of exits are Junior-level employees (36/42) — suggesting early-career retention is the #1 priority.
+        Performance Issues + Work Pressure together drive 60% of all departures. Bangalore (36.7%) and Pune (31.8%) are
+        significantly above the company average of 24.4% and need localised intervention.
+        Female attrition rate (30%) is higher than male (24%) despite a smaller workforce — worth monitoring.
+      </div>
+      <div class="insight-points">
+        <span class="insight-tag">&#9888; Bangalore: 36.7%</span>
+        <span class="insight-tag">&#9888; Pune: 31.8%</span>
+        <span class="insight-tag">&#128100; 86% Junior exits</span>
+        <span class="insight-tag">&#128203; 60% Performance/Pressure</span>
+        <span class="insight-tag">&#128105; Female rate: 30%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Conscient Sports &nbsp;&middot;&nbsp; People Analytics &nbsp;&middot;&nbsp; FY 2025–26 &nbsp;&middot;&nbsp; Data as of Mar 2026
+  </div>
+
+</div><!-- end .page -->
+
+<script>
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#8a95a3';
+
+const gridColor = 'rgba(0,47,108,0.06)';
+const navy = '#002f6c';
+const sky = '#0090d4';
+const skyLight = '#4fc3f7';
+const orange = '#e76f51';
+const red = '#c0392b';
+const green = '#1a7a4a';
+const slate = '#b0c4de';
+
+// Month-on-Month
+new Chart(document.getElementById('momChart'), {
+  type: 'bar',
+  data: {
+    labels: ["Apr '25","May '25","Jun '25","Jul '25","Aug '25","Sep '25","Oct '25","Nov '25","Dec '25","Jan '26","Feb '26","Mar '26"],
+    datasets: [
+      {
+        label: 'Monthly exits',
+        data: [5,4,2,6,5,1,3,3,3,2,1,7],
+        backgroundColor: navy,
+        borderRadius: 5,
+        order: 2,
+        yAxisID: 'y'
+      },
+      {
+        label: 'Cumulative exits',
+        data: [5,9,11,17,22,23,26,29,32,34,35,42],
+        type: 'line',
+        borderColor: skyLight,
+        backgroundColor: 'rgba(79,195,247,0.08)',
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointBackgroundColor: skyLight,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 1.5,
+        tension: 0.4,
+        fill: true,
+        order: 1,
+        yAxisID: 'y2'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: gridColor }, ticks: { autoSkip: false, maxRotation: 30 } },
+      y: { grid: { color: gridColor }, beginAtZero: true, max: 10, ticks: { stepSize: 2 } },
+      y2: { position: 'right', grid: { display: false }, beginAtZero: true, max: 50 }
+    }
+  }
+});
+
+// Gender donut
+new Chart(document.getElementById('genderChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Male (39)', 'Female (3)'],
+    datasets: [{
+      data: [39, 3],
+      backgroundColor: [navy, orange],
+      borderWidth: 0,
+      hoverOffset: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '70%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${Math.round(ctx.parsed / 42 * 100)}% of exits` } }
+    }
+  }
+});
+
+// Department horizontal stacked bar
+new Chart(document.getElementById('deptChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Technical','Operations','Sales','Marketing','Proj Mgmt','Support','Finance','HR','Gen Mgmt'],
+    datasets: [
+      { label: 'Exited', data: [14,13,9,3,3,0,0,0,0], backgroundColor: navy, borderRadius: 3 },
+      { label: 'Active', data: [51,29,22,6,4,6,4,3,4], backgroundColor: slate, borderRadius: 3 }
+    ]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { stacked: true, grid: { color: gridColor }, beginAtZero: true },
+      y: { stacked: true, grid: { display: false } }
+    }
+  }
+});
+
+// Level donut
+new Chart(document.getElementById('levelChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Junior (36)', 'Mid (4)', 'Senior (2)'],
+    datasets: [{
+      data: [36, 4, 2],
+      backgroundColor: [navy, sky, orange],
+      borderWidth: 0,
+      hoverOffset: 5
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '65%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${Math.round(ctx.parsed / 42 * 100)}%` } }
+    }
+  }
+});
+
+// Reasons donut
+new Chart(document.getElementById('reasonChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Performance','Work Pressure','Better Opp.','Medical/Family','Other'],
+    datasets: [{
+      data: [15, 10, 8, 5, 4],
+      backgroundColor: [red, '#e67e22', sky, green, '#888780'],
+      borderWidth: 0,
+      hoverOffset: 5
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: { legend: { display: false } }
+  }
+});
+
+// Location bar
+new Chart(document.getElementById('locChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Delhi/NCR','Bangalore','Pune','Mumbai','Hyderabad','Ahmedabad'],
+    datasets: [
+      {
+        label: 'Attrition rate %',
+        data: [18.7, 36.7, 31.8, 24.0, 28.6, 0],
+        backgroundColor: ['#e67e22', red, red, '#e67e22', '#e67e22', green],
+        borderRadius: 5
+      },
+      {
+        label: 'Exits (count)',
+        data: [14, 11, 7, 6, 4, 0],
+        backgroundColor: [
+          'rgba(0,47,108,0.2)',
+          'rgba(0,47,108,0.2)',
+          'rgba(0,47,108,0.2)',
+          'rgba(0,47,108,0.2)',
+          'rgba(0,47,108,0.2)',
+          'rgba(0,47,108,0.2)'
+        ],
+        borderRadius: 5,
+        yAxisID: 'y2'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false } },
+      y: {
+        grid: { color: gridColor },
+        max: 45,
+        ticks: { callback: v => v + '%' },
+        title: { display: true, text: 'Attrition rate', color: '#8a95a3' }
+      },
+      y2: {
+        position: 'right',
+        grid: { display: false },
+        max: 20,
+        title: { display: true, text: 'Exit count', color: '#8a95a3' }
+      }
+    }
+  }
+});
+</script>
+
+</body>
+</html>
